@@ -9,7 +9,7 @@ Google may provide), as modified from time to time.
 ___INFO___
 
 {
-  "displayName": "MGID Server-Side Pixel v1.0.0-beta",
+  "displayName": "MGID Server-Side Pixel v1.0.0",
   "description": "MGID Server-Side Pixel template for sending postback events.",
   "securityGroups": [],
   "id": "cvt_temp_public_id",
@@ -102,161 +102,165 @@ const POSTBACK_URL = 'https://a.mgid.com/postback';
 const isDebugMode = getContainerVersion().debugMode;
 
 function getIPAddress() {
-    return getEventData('ip_override') || getRemoteAddress() || '';
+  return getEventData('ip_override') || getRemoteAddress() || '';
 }
 
 function log(message, data) {
-    if (isDebugMode) {
-        if (data) {
-            logToConsole('MGID Conversion Tracking: ' + message, data);
-        } else {
-            logToConsole('MGID Conversion Tracking: ' + message);
-        }
+  if (isDebugMode) {
+    if (data) {
+      logToConsole(message, data);
+    } else {
+      logToConsole(message);
     }
+  }
+}
+
+function getClickIdFromQueryParams(searchParams) {
+  if (!searchParams) {
+    return null;
+  }
+
+  let queryClid =
+    searchParams.adclid ||
+    (searchParams.adclida ? searchParams[searchParams.adclida] : null);
+
+  if (typeof queryClid === 'string') {
+    queryClid = queryClid.split('?')[0];
+  }
+
+  return queryClid;
 }
 
 function extractClickId() {
-    log('Starting Click ID extraction');
+  log('Starting Click ID extraction');
 
-    let clickId = null;
-    let pageUrl = null;
-    let refererUrl = null;
+  let clickId = null;
 
-    const pageLocation = getEventData('page_location');
-    if (pageLocation) {
-        pageUrl = parseUrl(pageLocation);
-        if (pageUrl && pageUrl.searchParams && pageUrl.searchParams.adclid) {
-            clickId = pageUrl.searchParams.adclid;
-            log('Click ID found in page_location', clickId);
-            return clickId;
-        }
+  const pageLocation = getEventData('page_location');
+  if (pageLocation) {
+    const pageUrl = parseUrl(pageLocation);
+    clickId = getClickIdFromQueryParams(pageUrl ? pageUrl.searchParams : null);
+    if (clickId) {
+      log('Click ID found in page_location', clickId);
+      return clickId;
     }
+  }
 
-    const referer = getRequestHeader('referer');
-    if (referer) {
-        refererUrl = parseUrl(referer);
-        if (refererUrl && refererUrl.searchParams && refererUrl.searchParams.adclid) {
-            clickId = refererUrl.searchParams.adclid;
-            log('Click ID found in referer', clickId);
-            return clickId;
-        }
+  const referer = getRequestHeader('referer');
+  if (referer) {
+    const refererUrl = parseUrl(referer);
+    clickId = getClickIdFromQueryParams(
+      refererUrl ? refererUrl.searchParams : null,
+    );
+    if (clickId) {
+      log('Click ID found in referer', clickId);
+      return clickId;
     }
+  }
 
-    log('Checking for Click ID using adclida');
-    const adclidaPattern = 'adclida';
-    if (pageUrl && pageUrl.searchParams) {
-        for (let key in pageUrl.searchParams) {
-            if (pageUrl.searchParams[key] === adclidaPattern) {
-                clickId = pageUrl.searchParams[key];
-                log('Click ID found in page_location matching adclida pattern', clickId);
-                return clickId;
-            }
-        }
-    }
-
-    if (refererUrl && refererUrl.searchParams) {
-        for (let key in refererUrl.searchParams) {
-            if (refererUrl.searchParams[key] === adclidaPattern) {
-                clickId = refererUrl.searchParams[key];
-                log('Click ID found in referer matching adclida pattern', clickId);
-                return clickId;
-            }
-        }
-    }
-
-    log('Click ID not found in URL parameters');
-    return null;
+  log('Click ID not found in URL parameters');
+  return null;
 }
 
 function storeClickIdInCookie(clickId) {
-    if (!clickId) {
-        log('No Click ID to store in cookie');
-        return;
-    }
+  if (!clickId) {
+    log('No Click ID to store in cookie');
+    return;
+  }
 
-    log('Storing Click ID in cookie', clickId);
+  log('Storing Click ID in cookie', clickId);
 
-    const cookieOptions = {
-        domain: 'auto',
-        path: '/',
-        'max-age': 31536000, // 1 years in seconds
-        secure: true,
-        httpOnly: false,
-        sameSite: 'Lax'
-    };
+  const cookieOptions = {
+    domain: 'auto',
+    path: '/',
+    'max-age': 31536000, // 1 years in seconds
+    secure: true,
+    httpOnly: false,
+    sameSite: 'Lax',
+  };
 
-    setCookie(COOKIE_NAME, clickId, cookieOptions, false);
-    log('Click ID stored in cookie successfully');
+  setCookie(COOKIE_NAME, clickId, cookieOptions, false);
+  log('Click ID stored in cookie successfully');
 }
 
 function getClickIdFromCookie() {
-    const cookieValues = getCookieValues(COOKIE_NAME);
+  const cookieValues = getCookieValues(COOKIE_NAME);
 
-    if (cookieValues && cookieValues.length > 0) {
-        const clickId = cookieValues[0];
-        log('Click ID retrieved from cookie', clickId);
-        return clickId;
-    }
+  if (cookieValues && cookieValues.length > 0) {
+    const clickId = cookieValues[0];
+    log('Click ID retrieved from cookie', clickId);
+    return clickId;
+  }
 
-    log('Click ID not found in cookie');
-    return null;
+  log('Click ID not found in cookie');
+  return null;
 }
 
 function determineGoalToTrack() {
-    const eventData = getAllEventData();
-    const eventName = eventData.event_name;
+  const eventData = getAllEventData();
+  const eventName = eventData.event_name;
 
-    log('Determining goal to track for event', eventName);
+  log('Determining goal to track for event', eventName);
 
-    if (data.eventName && eventName === data.eventName) {
-        log('Event matches Goal');
-        return {
-            eventName: data.eventName,
-            revenue: data.revenue
-        };
-    }
+  if (data.eventName && eventName === data.eventName) {
+    log('Event matches Goal');
+    return {
+      eventName: data.eventName,
+      revenue: data.revenue,
+    };
+  }
 
-    log('Event does not match any configured goal');
-    return null;
+  log('Event does not match any configured goal');
+  return null;
 }
 
 function sendPostback(goal, clickId) {
-    if (!goal || !clickId) {
-        log('Cannot send postback: missing required parameters', {goal: goal, clickId: clickId});
-        data.gtmOnFailure();
-        return;
-    }
-
-    let queryParams = '?e=' + encodeUriComponent(goal.eventName);
-    queryParams += '&c=' + encodeUriComponent(clickId);
-    queryParams += '&m=gtm-server';
-
-    if (goal.revenue) {
-        queryParams += '&r=' + encodeUriComponent(goal.revenue);
-    }
-
-    const requestUrl = POSTBACK_URL + queryParams;
-    log('Sending postback request', requestUrl);
-
-    sendHttpGet(requestUrl, {
-        headers:{
-            'X-Forwarded-For': getIPAddress(),
-            'X-Revision': apiRevision,
-            'User-Agent': getEventData('user_agent') || '',
-        },
-        timeout: 2000
-    }).then((response) => {
-        if (response.statusCode >= 200 && response.statusCode < 300) {
-            log('Postback sent successfully', {statusCode: response.statusCode, body: response.body});
-            data.gtmOnSuccess();
-        } else {
-            log('Postback failed with status code', {statusCode: response.statusCode, body: response.body});
-            data.gtmOnFailure();
-        }
+  log('clickId', clickId);
+  if (!goal || !clickId) {
+    log('Cannot send postback: missing required parameters', {
+      goal: goal,
+      clickId: clickId,
     });
+    data.gtmOnFailure();
+    return;
+  }
+
+  let queryParams = '?e=' + encodeUriComponent(goal.eventName);
+  queryParams += '&c=' + encodeUriComponent(clickId);
+  queryParams += '&m=gtm-server';
+
+  if (goal.revenue) {
+    queryParams += '&r=' + encodeUriComponent(goal.revenue);
+  }
+
+  const requestUrl = POSTBACK_URL + queryParams;
+  log('Sending postback request', requestUrl);
+
+  sendHttpGet(requestUrl, {
+    headers: {
+      'X-Forwarded-For': getIPAddress(),
+      'X-Revision': apiRevision,
+      'User-Agent': getEventData('user_agent') || '',
+    },
+    timeout: 2000,
+  }).then((response) => {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      log('Postback sent successfully', {
+        statusCode: response.statusCode,
+        body: response.body,
+      });
+      data.gtmOnSuccess();
+    } else {
+      log('Postback failed with status code', {
+        statusCode: response.statusCode,
+        body: response.body,
+      });
+      data.gtmOnFailure();
+    }
+  });
 }
 
-log('=== MGID Conversion Tracking Tag Started ===');
+log('=== MGID Server Side GTM ===');
 log('Template configuration', data);
 
 if (data.type === 'page_view') {
@@ -266,26 +270,29 @@ if (data.type === 'page_view') {
   }
   data.gtmOnSuccess();
 } else {
-    const goal = determineGoalToTrack();
-    if (!goal) {
-        log('No matching goal found for this event, skipping postback');
-        data.gtmOnSuccess();
-        return;
+  const goal = determineGoalToTrack();
+  if (!goal) {
+    log('No matching goal found for this event, skipping postback');
+    data.gtmOnSuccess();
+    return;
+  }
+  let clickId = getClickIdFromCookie();
+  if (!clickId) {
+    const extractedClickId = extractClickId();
+    if (extractedClickId) {
+      storeClickIdInCookie(extractedClickId);
     }
-    let clickId = getClickIdFromCookie();
+    // first-party cookies || third-party cookies are not enabled, so we need to extract the click ID from the URL
+    clickId = getClickIdFromCookie() || extractedClickId;
     if (!clickId) {
-        const extractedClickId = extractClickId();
-        if (extractedClickId) {
-            storeClickIdInCookie(extractedClickId);
-        }
-        let clickId = getClickIdFromCookie() || extractedClickId;
-        if (!clickId) {
-            log('ERROR: Click ID is required but not found in cookie. Cannot send postback.');
-            data.gtmOnFailure();
-            return;
-        }
+      log(
+        'ERROR: Click ID is required but not found in cookie or in url. Cannot send postback.'
+      );
+      data.gtmOnFailure();
+      return;
     }
-    sendPostback(goal, clickId);
+  }
+  sendPostback(goal, clickId);
 }
 
 
@@ -522,11 +529,294 @@ ___SERVER_PERMISSIONS___
 
 ___TESTS___
 
-scenarios: []
+scenarios:
+- name: Page View - Click ID found in page_location
+  code: |2-
+        const mockData = {
+            type: 'page_view',
+            eventName: 'purchase' // Does not matter for page_view logic
+        };
+
+        mockEventData({
+            page_location: 'https://example.com/checkout?adclid=test_clid_from_url&param=value',
+            referer: ''
+        });
+
+        runCode(mockData);
+
+        assertApi('setCookie').wasCalledWith(COOKIE_NAME, 'test_clid_from_url', {
+            domain: 'auto',
+            path: '/',
+            'max-age': 31536000,
+            secure: true,
+            httpOnly: false,
+            sameSite: 'Lax'
+        }, false);
+        assertApi('gtmOnSuccess').wasCalled();
+- name: Page View - Click ID found in Referer
+  code: |2-
+        const mockData = {
+            type: 'page_view'
+        };
+
+        mockEventData({
+            page_location: 'https://example.com/checkout', // No click ID here
+        });
+        mock('getRequestHeader', (header) => {
+            if (header === 'referer') return 'https://mgid.com/campaign?adclid=referer_clid_value';
+            return '';
+        });
+
+        runCode(mockData);
+
+        assertApi('setCookie').wasCalledWith(COOKIE_NAME, 'referer_clid_value', {
+            domain: 'auto',
+            path: '/',
+            'max-age': 31536000,
+            secure: true,
+            httpOnly: false,
+            sameSite: 'Lax'
+        }, false);
+        assertApi('gtmOnSuccess').wasCalled();
+- name: Page View - Click ID not found anywhere
+  code: |2-
+        const mockData = {
+            type: 'page_view'
+        };
+
+        mockEventData({
+            page_location: 'https://example.com/checkout?utm=test',
+        });
+        mock('getRequestHeader', () => '');
+
+        runCode(mockData);
+
+        assertApi('setCookie').wasNotCalled();
+        assertApi('gtmOnSuccess').wasCalled();
+- name: Conversion - No Matching Goal
+  code: |2-
+        const mockData = {
+            type: 'conversion',
+            eventName: 'lead',
+        };
+
+        // Event Data Mocks: Incoming event is 'checkout', not 'lead'
+        mockEventData({
+            event_name: 'checkout',
+        });
+        mock('getCookieValues', () => ['some_clid']);
+
+        runCode(mockData);
+
+        // Assertions: Should fail gracefully and not send postback
+        assertApi('sendHttpGet').wasNotCalled();
+        assertApi('gtmOnSuccess').wasCalled(); // Exits gracefully
+        assertApi('gtmOnFailure').wasNotCalled();
+- name: Conversion - Matching Goal, Missing Click ID (Final fail)
+  code: |2-
+        const mockData = {
+            type: 'conversion',
+            eventName: 'lead',
+        };
+
+        mockEventData({
+            event_name: 'lead',
+            page_location: 'https://example.com/lead',
+        });
+        mock('getCookieValues', () => []);
+        mock('getRequestHeader', () => '');
+
+        runCode(mockData);
+
+        assertApi('sendHttpGet').wasNotCalled();
+        assertApi('gtmOnSuccess').wasNotCalled();
+        assertApi('gtmOnFailure').wasCalled();
+- name: Conversion - Postback HTTP Failure (400 status)
+  code: "    const expectedClickId = 'cookie_clid_fail';\n    const expectedEventName\
+    \ = 'fail_event';\n    const mockData = {\n        type: 'conversion',\n     \
+    \   eventName: expectedEventName\n    };\n\n    mockEventData({\n        event_name:\
+    \ expectedEventName,\n    });\n    mock('getCookieValues', () => [expectedClickId]);\n\
+    \    mock('sendHttpGet', (url, options) => {\n        return {\n            then:\
+    \ (callback) => {\n                callback({\n                    statusCode:\
+    \ 400,\n                    body: 'Bad Request'\n                });\n       \
+    \     },\n            catch: (callback) => {} \n        };\n    });\n\n    runCode(mockData);\n\
+    \n    assertApi('sendHttpGet').wasCalled();\n    assertApi('gtmOnSuccess').wasNotCalled();\n\
+    \    assertApi('gtmOnFailure').wasCalled(); // Should call gtmOnFailure due to\
+    \ 400 status"
+- name: Click ID Parameter `adclida` test
+  code: |2-
+        const mockData = {
+            type: 'page_view'
+        };
+
+        mockEventData({
+            page_location: 'https://example.com/test?adclida=mgid_id&mgid_id=test_adclida_clid',
+            referer: ''
+        });
+
+        runCode(mockData);
+
+        assertApi('setCookie').wasCalledWith(COOKIE_NAME, 'test_adclida_clid', {
+            domain: 'auto',
+            path: '/',
+            'max-age': 31536000,
+            secure: true,
+            httpOnly: false,
+            sameSite: 'Lax'
+        }, false);
+        assertApi('gtmOnSuccess').wasCalled();
+- name: Cookie Present, Postback Success (with Revenue)
+  code: |
+    const expectedClickId = "cookie_clid_123";
+    const expectedRevenue = "100.00";
+    const expectedEventName = "lead";
+    const expectedIP = "8.8.8.8";
+    const mockData = {
+      type: "conversion",
+      eventName: expectedEventName,
+      revenue: expectedRevenue,
+    };
+
+    mockEventData({
+      event_name: expectedEventName,
+      user_agent: "Test Browser",
+      ip_override: expectedIP,
+      page_location: "https://example.com/thank-you", // ignored as cookie is found first
+    });
+    mock("getCookieValues", () => [expectedClickId]);
+
+    mock("sendHttpGet", (url, options) => {
+      assertThat(url).contains(expectedClickId);
+      assertThat(url).contains("e="+expectedEventName);
+      assertThat(url).contains("r="+expectedRevenue);
+      assertThat(options.headers["X-Forwarded-For"]).isEqualTo(expectedIP);
+      assertThat(options.headers["User-Agent"]).isEqualTo("Test Browser");
+
+      return {
+        then: (callback) => {
+          callback({
+            statusCode: 200,
+            body: "OK",
+          });
+        },
+        catch: (callback) => {},
+      };
+    });
+
+    runCode(mockData);
+
+    assertApi("sendHttpGet").wasCalled();
+    assertApi("gtmOnSuccess").wasCalled();
+    assertApi("gtmOnFailure").wasNotCalled();
+- name: Conversion - Cookie Missing, Extracted from URL, Postback Success (No Revenue)
+  code: |
+    const expectedClickId = "url_extracted_clid";
+    const expectedEventName = "purchase";
+    const expectedRemoteIP = "1.1.1.1";
+    const mockData = {
+      type: "conversion",
+      eventName: expectedEventName,
+    };
+
+    mockEventData({
+      event_name: expectedEventName,
+      user_agent: "Mobile Test",
+      ip_override: "",
+      page_location: "https://example.com/confirm?adclid="+expectedClickId,
+    });
+    mock("getCookieValues", () => []); // Cookie is missing
+    mock("getRemoteAddress", () => expectedRemoteIP);
+
+    mock("sendHttpGet", (url, options) => {
+      assertThat(url).contains(expectedClickId);
+      assertThat(url).contains("e="+expectedEventName);
+      assertThat(url).doesNotContain("&r="); // No revenue parameter
+      assertThat(options.headers["X-Forwarded-For"]).isEqualTo(expectedRemoteIP);
+
+      return {
+        then: (callback) => {
+          callback({
+            statusCode: 204,
+            body: "",
+          });
+        },
+        catch: (callback) => {},
+      };
+    });
+
+    runCode(mockData);
+
+    assertApi("setCookie").wasCalledWith(
+      COOKIE_NAME,
+      expectedClickId,
+      {
+        domain: "auto",
+        path: "/",
+        "max-age": 31536000,
+        secure: true,
+        httpOnly: false,
+        sameSite: "Lax",
+      },
+      false
+    );
+    assertApi("sendHttpGet").wasCalled();
+    assertApi("gtmOnSuccess").wasCalled();
+setup: |-
+  const sendHttpGet = require('sendHttpGet');
+  const setCookie = require('setCookie');
+  const getCookieValues = require('getCookieValues');
+  const getEventData = require('getEventData');
+  const getAllEventData = require('getAllEventData');
+  const parseUrl = require('parseUrl');
+  const getContainerVersion = require('getContainerVersion');
+  const logToConsole = require('logToConsole');
+  const getRequestHeader = require('getRequestHeader');
+  const getRemoteAddress = require('getRemoteAddress');
+  const encodeUriComponent = require('encodeUriComponent');
+
+  mock('getContainerVersion', {
+      debugMode: true
+  });
+
+  mock('sendHttpGet');
+  mock('setCookie');
+  mock('getCookieValues');
+  mock('getRequestHeader');
+  mock('getRemoteAddress');
+  mock('data.gtmOnSuccess');
+  mock('data.gtmOnFailure');
+
+  const COOKIE_NAME = 'MgidSensorClid';
+
+  const mockEventData = (dataMap) => {
+      const defaultData = {
+          event_name: 'default_event',
+          page_location: 'https://example.com/page',
+          user_agent: 'Test User Agent',
+          ip_override: '192.168.1.1',
+      };
+      const combinedData = {};
+      for (let key in defaultData) {
+          if (defaultData.hasOwnProperty(key)) {
+              combinedData[key] = defaultData[key];
+          }
+      }
+      for (let key in dataMap) {
+          if (dataMap.hasOwnProperty(key)) {
+              combinedData[key] = dataMap[key];
+          }
+      }
+
+      mock('getAllEventData', () => {
+          return combinedData;
+      });
+
+      mock('getEventData', (key) => {
+          return combinedData[key];
+      });
+  };
 
 
 ___NOTES___
 
 Created for MGID conversion tracking via GTM Server-Side.
-
-
