@@ -1,11 +1,3 @@
-___TERMS_OF_SERVICE___
-
-By creating or modifying this file you agree to Google Tag Manager's Community
-Template Gallery Developer Terms of Service available at
-https://developers.google.com/tag-manager/gallery-tos (or such other URL as
-Google may provide), as modified from time to time.
-
-
 ___INFO___
 
 {
@@ -84,26 +76,21 @@ ___TEMPLATE_PARAMETERS___
 
 ___SANDBOXED_JS_FOR_SERVER___
 
-const sendHttpGet = require('sendHttpGet');
-const setCookie = require('setCookie');
-const getCookieValues = require('getCookieValues');
-const getEventData = require('getEventData');
-const getAllEventData = require('getAllEventData');
-const parseUrl = require('parseUrl');
-const getContainerVersion = require('getContainerVersion');
-const logToConsole = require('logToConsole');
-const getRequestHeader = require('getRequestHeader');
-const getRemoteAddress = require('getRemoteAddress');
-const encodeUriComponent = require('encodeUriComponent');
-const apiRevision = '1.0.0';
+const sendHttpGet = require("sendHttpGet");
+const setCookie = require("setCookie");
+const getCookieValues = require("getCookieValues");
+const getEventData = require("getEventData");
+const getAllEventData = require("getAllEventData");
+const parseUrl = require("parseUrl");
+const getContainerVersion = require("getContainerVersion");
+const logToConsole = require("logToConsole");
+const getRequestHeader = require("getRequestHeader");
+const encodeUriComponent = require("encodeUriComponent");
+const apiRevision = "1.0.0";
 
-const COOKIE_NAME = 'MgidSensorClid';
-const POSTBACK_URL = 'https://a.mgid.com/postback';
+const COOKIE_NAME = "MgidSensorClid";
+const POSTBACK_URL = "https://a.mgid.com/postback";
 const isDebugMode = getContainerVersion().debugMode;
-
-function getIPAddress() {
-  return getEventData('ip_override') || getRemoteAddress() || '';
-}
 
 function log(message, data) {
   if (isDebugMode) {
@@ -124,63 +111,63 @@ function getClickIdFromQueryParams(searchParams) {
     searchParams.adclid ||
     (searchParams.adclida ? searchParams[searchParams.adclida] : null);
 
-  if (typeof queryClid === 'string') {
-    queryClid = queryClid.split('?')[0];
+  if (typeof queryClid === "string") {
+    queryClid = queryClid.split("?")[0];
   }
 
   return queryClid;
 }
 
 function extractClickId() {
-  log('Starting Click ID extraction');
+  log("Starting Click ID extraction");
 
   let clickId = null;
 
-  const pageLocation = getEventData('page_location');
+  const pageLocation = getEventData("page_location");
   if (pageLocation) {
     const pageUrl = parseUrl(pageLocation);
     clickId = getClickIdFromQueryParams(pageUrl ? pageUrl.searchParams : null);
     if (clickId) {
-      log('Click ID found in page_location', clickId);
+      log("Click ID found in page_location", clickId);
       return clickId;
     }
   }
 
-  const referer = getRequestHeader('referer');
+  const referer = getRequestHeader("referer");
   if (referer) {
     const refererUrl = parseUrl(referer);
     clickId = getClickIdFromQueryParams(
       refererUrl ? refererUrl.searchParams : null,
     );
     if (clickId) {
-      log('Click ID found in referer', clickId);
+      log("Click ID found in referer", clickId);
       return clickId;
     }
   }
 
-  log('Click ID not found in URL parameters');
+  log("Click ID not found in URL parameters");
   return null;
 }
 
 function storeClickIdInCookie(clickId) {
   if (!clickId) {
-    log('No Click ID to store in cookie');
+    log("No Click ID to store in cookie");
     return;
   }
 
-  log('Storing Click ID in cookie', clickId);
+  log("Storing Click ID in cookie", clickId);
 
   const cookieOptions = {
-    domain: 'auto',
-    path: '/',
-    'max-age': 31536000, // 1 years in seconds
+    domain: "auto",
+    path: "/",
+    "max-age": 31536000, // 1 years in seconds
     secure: true,
     httpOnly: false,
-    sameSite: 'Lax',
+    sameSite: "Lax",
   };
 
   setCookie(COOKIE_NAME, clickId, cookieOptions, false);
-  log('Click ID stored in cookie successfully');
+  log("Click ID stored in cookie successfully");
 }
 
 function getClickIdFromCookie() {
@@ -188,11 +175,11 @@ function getClickIdFromCookie() {
 
   if (cookieValues && cookieValues.length > 0) {
     const clickId = cookieValues[0];
-    log('Click ID retrieved from cookie', clickId);
+    log("Click ID retrieved from cookie", clickId);
     return clickId;
   }
 
-  log('Click ID not found in cookie');
+  log("Click ID not found in cookie");
   return null;
 }
 
@@ -200,24 +187,24 @@ function determineGoalToTrack() {
   const eventData = getAllEventData();
   const eventName = eventData.event_name;
 
-  log('Determining goal to track for event', eventName);
+  log("Determining goal to track for event", eventName);
 
   if (data.eventName && eventName === data.eventName) {
-    log('Event matches Goal');
+    log("Event matches Goal");
     return {
       eventName: data.eventName,
       revenue: data.revenue,
     };
   }
 
-  log('Event does not match any configured goal');
+  log("Event does not match any configured goal");
   return null;
 }
 
 function sendPostback(goal, clickId) {
-  log('clickId', clickId);
+  log("clickId", clickId);
   if (!goal || !clickId) {
-    log('Cannot send postback: missing required parameters', {
+    log("Cannot send postback: missing required parameters", {
       goal: goal,
       clickId: clickId,
     });
@@ -225,33 +212,31 @@ function sendPostback(goal, clickId) {
     return;
   }
 
-  let queryParams = '?e=' + encodeUriComponent(goal.eventName);
-  queryParams += '&c=' + encodeUriComponent(clickId);
-  queryParams += '&m=gtm-server';
+  let queryParams = "?e=" + encodeUriComponent(goal.eventName);
+  queryParams += "&c=" + encodeUriComponent(clickId);
+  queryParams += "&m=gtm-server";
 
   if (goal.revenue) {
-    queryParams += '&r=' + encodeUriComponent(goal.revenue);
+    queryParams += "&r=" + encodeUriComponent(goal.revenue);
   }
 
   const requestUrl = POSTBACK_URL + queryParams;
-  log('Sending postback request', requestUrl);
+  log("Sending postback request", requestUrl);
 
   sendHttpGet(requestUrl, {
     headers: {
-      'X-Forwarded-For': getIPAddress(),
-      'X-Revision': apiRevision,
-      'User-Agent': getEventData('user_agent') || '',
+      "X-Revision": apiRevision,
     },
     timeout: 2000,
   }).then((response) => {
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      log('Postback sent successfully', {
+      log("Postback sent successfully", {
         statusCode: response.statusCode,
         body: response.body,
       });
       data.gtmOnSuccess();
     } else {
-      log('Postback failed with status code', {
+      log("Postback failed with status code", {
         statusCode: response.statusCode,
         body: response.body,
       });
@@ -260,10 +245,10 @@ function sendPostback(goal, clickId) {
   });
 }
 
-log('=== MGID Server Side GTM ===');
-log('Template configuration', data);
+log("=== MGID Server Side GTM ===");
+log("Template configuration", data);
 
-if (data.type === 'page_view') {
+if (data.type === "page_view") {
   const extractedClickId = extractClickId();
   if (extractedClickId) {
     storeClickIdInCookie(extractedClickId);
@@ -272,7 +257,7 @@ if (data.type === 'page_view') {
 } else {
   const goal = determineGoalToTrack();
   if (!goal) {
-    log('No matching goal found for this event, skipping postback');
+    log("No matching goal found for this event, skipping postback");
     data.gtmOnSuccess();
     return;
   }
@@ -286,7 +271,7 @@ if (data.type === 'page_view') {
     clickId = getClickIdFromCookie() || extractedClickId;
     if (!clickId) {
       log(
-        'ERROR: Click ID is required but not found in cookie or in url. Cannot send postback.'
+        "ERROR: Click ID is required but not found in cookie or in url. Cannot send postback.",
       );
       data.gtmOnFailure();
       return;
@@ -442,10 +427,22 @@ ___SERVER_PERMISSIONS___
       },
       "param": [
         {
+          "key": "keyPatterns",
+          "value": {
+            "type": 2,
+            "listItem": [
+              {
+                "type": 1,
+                "string": "page_location"
+              }
+            ]
+          }
+        },
+        {
           "key": "eventDataAccess",
           "value": {
             "type": 1,
-            "string": "any"
+            "string": "specific"
           }
         }
       ]
@@ -497,17 +494,47 @@ ___SERVER_PERMISSIONS___
       },
       "param": [
         {
+          "key": "headerWhitelist",
+          "value": {
+            "type": 2,
+            "listItem": [
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "headerName"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "referer"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "key": "headersAllowed",
+          "value": {
+            "type": 8,
+            "boolean": true
+          }
+        },
+        {
           "key": "requestAccess",
           "value": {
             "type": 1,
-            "string": "any"
+            "string": "specific"
           }
         },
         {
           "key": "headerAccess",
           "value": {
             "type": 1,
-            "string": "any"
+            "string": "specific"
           }
         },
         {
