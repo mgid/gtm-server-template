@@ -1,7 +1,7 @@
 ___INFO___
 
 {
-  "displayName": "MGID Server-Side Pixel v1.0.0",
+  "displayName": "MGID Server-Side Pixel v1.0.1",
   "description": "MGID Server-Side Pixel template for sending postback events.",
   "securityGroups": [],
   "id": "cvt_temp_public_id",
@@ -80,7 +80,6 @@ const sendHttpGet = require("sendHttpGet");
 const setCookie = require("setCookie");
 const getCookieValues = require("getCookieValues");
 const getEventData = require("getEventData");
-const getAllEventData = require("getAllEventData");
 const parseUrl = require("parseUrl");
 const getContainerVersion = require("getContainerVersion");
 const logToConsole = require("logToConsole");
@@ -183,34 +182,19 @@ function getClickIdFromCookie() {
   return null;
 }
 
-function determineGoalToTrack() {
-  const eventData = getAllEventData();
-  const eventName = eventData.event_name;
-
-  log("Determining goal to track for event", eventName);
-
-  if (data.eventName && eventName === data.eventName) {
-    log("Event matches Goal");
-    return {
-      eventName: data.eventName,
-      revenue: data.revenue,
-    };
-  }
-
-  log("Event does not match any configured goal");
-  return null;
-}
-
-function sendPostback(goal, clickId) {
-  log("clickId", clickId);
-  if (!goal || !clickId) {
+function sendPostback(clickId) {
+  if (!clickId) {
     log("Cannot send postback: missing required parameters", {
-      goal: goal,
       clickId: clickId,
     });
     data.gtmOnFailure();
     return;
   }
+
+  const goal = {
+    eventName: data.eventName,
+    revenue: data.revenue,
+  };
 
   let queryParams = "?e=" + encodeUriComponent(goal.eventName);
   queryParams += "&c=" + encodeUriComponent(clickId);
@@ -255,12 +239,6 @@ if (data.type === "page_view") {
   }
   data.gtmOnSuccess();
 } else {
-  const goal = determineGoalToTrack();
-  if (!goal) {
-    log("No matching goal found for this event, skipping postback");
-    data.gtmOnSuccess();
-    return;
-  }
   let clickId = getClickIdFromCookie();
   if (!clickId) {
     const extractedClickId = extractClickId();
@@ -277,7 +255,7 @@ if (data.type === "page_view") {
       return;
     }
   }
-  sendPostback(goal, clickId);
+  sendPostback(clickId);
 }
 
 
@@ -620,25 +598,6 @@ scenarios:
 
         assertApi('setCookie').wasNotCalled();
         assertApi('gtmOnSuccess').wasCalled();
-- name: Conversion - No Matching Goal
-  code: |2-
-        const mockData = {
-            type: 'conversion',
-            eventName: 'lead',
-        };
-
-        // Event Data Mocks: Incoming event is 'checkout', not 'lead'
-        mockEventData({
-            event_name: 'checkout',
-        });
-        mock('getCookieValues', () => ['some_clid']);
-
-        runCode(mockData);
-
-        // Assertions: Should fail gracefully and not send postback
-        assertApi('sendHttpGet').wasNotCalled();
-        assertApi('gtmOnSuccess').wasCalled(); // Exits gracefully
-        assertApi('gtmOnFailure').wasNotCalled();
 - name: Conversion - Matching Goal, Missing Click ID (Final fail)
   code: |2-
         const mockData = {
@@ -697,7 +656,6 @@ scenarios:
     const expectedClickId = "cookie_clid_123";
     const expectedRevenue = "100.00";
     const expectedEventName = "lead";
-    const expectedIP = "8.8.8.8";
     const mockData = {
       type: "conversion",
       eventName: expectedEventName,
@@ -706,8 +664,6 @@ scenarios:
 
     mockEventData({
       event_name: expectedEventName,
-      user_agent: "Test Browser",
-      ip_override: expectedIP,
       page_location: "https://example.com/thank-you", // ignored as cookie is found first
     });
     mock("getCookieValues", () => [expectedClickId]);
@@ -716,8 +672,6 @@ scenarios:
       assertThat(url).contains(expectedClickId);
       assertThat(url).contains("e="+expectedEventName);
       assertThat(url).contains("r="+expectedRevenue);
-      assertThat(options.headers["X-Forwarded-For"]).isEqualTo(expectedIP);
-      assertThat(options.headers["User-Agent"]).isEqualTo("Test Browser");
 
       return {
         then: (callback) => {
@@ -739,7 +693,6 @@ scenarios:
   code: |
     const expectedClickId = "url_extracted_clid";
     const expectedEventName = "purchase";
-    const expectedRemoteIP = "1.1.1.1";
     const mockData = {
       type: "conversion",
       eventName: expectedEventName,
@@ -747,18 +700,14 @@ scenarios:
 
     mockEventData({
       event_name: expectedEventName,
-      user_agent: "Mobile Test",
-      ip_override: "",
       page_location: "https://example.com/confirm?adclid="+expectedClickId,
     });
     mock("getCookieValues", () => []); // Cookie is missing
-    mock("getRemoteAddress", () => expectedRemoteIP);
 
     mock("sendHttpGet", (url, options) => {
       assertThat(url).contains(expectedClickId);
       assertThat(url).contains("e="+expectedEventName);
       assertThat(url).doesNotContain("&r="); // No revenue parameter
-      assertThat(options.headers["X-Forwarded-For"]).isEqualTo(expectedRemoteIP);
 
       return {
         then: (callback) => {
@@ -793,12 +742,10 @@ setup: |-
   const setCookie = require('setCookie');
   const getCookieValues = require('getCookieValues');
   const getEventData = require('getEventData');
-  const getAllEventData = require('getAllEventData');
   const parseUrl = require('parseUrl');
   const getContainerVersion = require('getContainerVersion');
   const logToConsole = require('logToConsole');
   const getRequestHeader = require('getRequestHeader');
-  const getRemoteAddress = require('getRemoteAddress');
   const encodeUriComponent = require('encodeUriComponent');
 
   mock('getContainerVersion', {
@@ -819,8 +766,6 @@ setup: |-
       const defaultData = {
           event_name: 'default_event',
           page_location: 'https://example.com/page',
-          user_agent: 'Test User Agent',
-          ip_override: '192.168.1.1',
       };
       const combinedData = {};
       for (let key in defaultData) {
