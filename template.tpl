@@ -209,7 +209,7 @@ function sendPostback(clickId) {
 
   sendHttpGet(requestUrl, {
     headers: {
-      "X-Revision": apiRevision,
+      "X-GTM-SERVER-TEMPLATE": apiRevision,
     },
     timeout: 2000,
   }).then((response) => {
