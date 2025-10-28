@@ -136,7 +136,7 @@ function extractClickId() {
   if (referer) {
     const refererUrl = parseUrl(referer);
     clickId = getClickIdFromQueryParams(
-      refererUrl ? refererUrl.searchParams : null,
+      refererUrl ? refererUrl.searchParams : null
     );
     if (clickId) {
       log("Click ID found in referer", clickId);
@@ -249,7 +249,7 @@ if (data.type === "page_view") {
     clickId = getClickIdFromCookie() || extractedClickId;
     if (!clickId) {
       log(
-        "ERROR: Click ID is required but not found in cookie or in url. Cannot send postback.",
+        "ERROR: Click ID is required but not found in cookie or in url. Cannot send postback."
       );
       data.gtmOnFailure();
       return;
@@ -257,7 +257,6 @@ if (data.type === "page_view") {
   }
   sendPostback(clickId);
 }
-
 
 ___SERVER_PERMISSIONS___
 
