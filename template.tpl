@@ -85,7 +85,7 @@ const getContainerVersion = require("getContainerVersion");
 const logToConsole = require("logToConsole");
 const getRequestHeader = require("getRequestHeader");
 const encodeUriComponent = require("encodeUriComponent");
-const apiRevision = "1.0.0";
+const apiRevision = "1.0.x";
 
 const COOKIE_NAME = "MgidSensorClid";
 const POSTBACK_URL = "https://a.mgid.com/postback";
