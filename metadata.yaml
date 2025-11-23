@@ -1,0 +1,6 @@
+homepage: https://mgid.com
+documentation: https://github.com/mgid/gtm-server-template/blob/main/README.md
+versions:
+  - sha: 19279305d696aa05e0023fe5fab98ff65b669e1f
+    changeNotes: |
+      Release of the MGID Server-Side Pixel GTM template 1.0.0.
