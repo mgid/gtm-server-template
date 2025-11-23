@@ -1,7 +1,15 @@
+___TERMS_OF_SERVICE___
+
+By creating or modifying this file you agree to Google Tag Manager's Community
+Template Gallery Developer Terms of Service available at
+https://developers.google.com/tag-manager/gallery-tos (or such other URL as
+Google may provide), as modified from time to time.
+
+
 ___INFO___
 
 {
-  "displayName": "MGID Server-Side Pixel v1.0.1",
+  "displayName": "MGID Server-Side Pixel",
   "description": "MGID Server-Side Pixel template for sending postback events.",
   "securityGroups": [],
   "id": "cvt_temp_public_id",
@@ -257,6 +265,7 @@ if (data.type === "page_view") {
   }
   sendPostback(clickId);
 }
+
 
 ___SERVER_PERMISSIONS___
 
@@ -791,3 +800,5 @@ setup: |-
 ___NOTES___
 
 Created for MGID conversion tracking via GTM Server-Side.
+
+
