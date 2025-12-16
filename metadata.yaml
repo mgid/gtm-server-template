@@ -1,6 +1,6 @@
 homepage: https://mgid.com
-documentation: https://github.com/mgid/gtm-server-template/blob/main/README.md
+documentation: https://help.mgid.com/mgid-server-side-google-tag-manager-template
 versions:
-  - sha: 19279305d696aa05e0023fe5fab98ff65b669e1f
+  - sha: 6f7b686a4ad090a295fe43593bf7164ef97b219b
     changeNotes: |
-      Release of the MGID Server-Side Pixel GTM template 1.0.0.
+      Release of the MGID Server-Side Tag GTM template 1.0.0.
