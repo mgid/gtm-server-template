@@ -1,5 +1,5 @@
 
-# MGID Server-Side Pixel for Google Tag Manager
+# MGID Server-Side Tag for Google Tag Manager
 
 [![GTM Server-Side](https://img.shields.io/badge/GTM-Server--Side-blue.svg)](https://developers.google.com/tag-platform/tag-manager/server-side)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
@@ -31,7 +31,7 @@ Before installing, ensure you have the following:
 ## 📦 Installation
 
 ### Option 1: Community Gallery (Recommended)
-Search for **"MGID Server-Side Pixel"** in the GTM Template Gallery and add it to your workspace.
+Search for **"MGID Server-Side Tag"** in the GTM Template Gallery and add it to your workspace.
 
 ### Option 2: Manual Import
 1.  Download the [`template.tpl`](./template.tpl) file from this repository.
@@ -49,7 +49,7 @@ This template functions in two modes. You will typically need to create **two se
 ### 1. Landing Page Tag (Store the Click)
 *Captures the user when they arrive from an ad.*
 
-* **Tag Type:** MGID Server-Side Pixel
+* **Tag Type:** MGID Server-Side Tag
 * **Event Type:** `PageView`
 * **Trigger:** Fire on **All Page Views** (or specifically where your Client, e.g., GA4, claims the request).
 
@@ -58,7 +58,7 @@ This template functions in two modes. You will typically need to create **two se
 ### 2. Conversion Tag (Send the Data)
 *Captures the user when they convert.*
 
-* **Tag Type:** MGID Server-Side Pixel
+* **Tag Type:** MGID Server-Side Tag
 * **Event Type:** `Conversion`
 * **Event Name:** Your goal name (e.g., `purchase`, `lead`).
 * **Conversion Value:** (Optional) Static value or variable (e.g., `{{Event Data - Value}}`).

@@ -9,8 +9,8 @@ Google may provide), as modified from time to time.
 ___INFO___
 
 {
-  "displayName": "MGID Server-Side Pixel",
-  "description": "MGID Server-Side Pixel template for sending postback events.",
+  "displayName": "MGID Server-Side Tag",
+  "description": "MGID Server-Side Tag template for sending postback events.",
   "securityGroups": [],
   "id": "cvt_temp_public_id",
   "categories": [
