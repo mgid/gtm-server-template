@@ -1,6 +1,5 @@
 homepage: https://mgid.com
 documentation: https://help.mgid.com/mgid-server-side-google-tag-manager-template
 versions:
-  - sha: 6f7b686a4ad090a295fe43593bf7164ef97b219b
-    changeNotes: |
-      Release of the MGID Server-Side Tag GTM template 1.0.0.
+  - sha: 6f7b686a4ad090a295fe43593bf7164ef97b219b 
+    changeNotes: Release of the MGID Server-Side Tag GTM template 1.0.0
